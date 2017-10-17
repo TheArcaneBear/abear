@@ -121,6 +121,8 @@ contract ArcaneBearToken is Administration {
         onlyAdmin
         returns (bool frozen)
     {
+        require(!transfersFrozen);
+        transfersFrozen = true;
         FreezeTransfers(msg.sender, true);
         return true;
     }
@@ -130,6 +132,8 @@ contract ArcaneBearToken is Administration {
         onlyAdmin
         returns (bool frozen)
     {
+        require(transfersFrozen);
+        transfersFrozen = false;
         ThawTransfers(msg.sender, true);
         return true;
     }
