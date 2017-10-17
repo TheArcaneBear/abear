@@ -97,6 +97,7 @@ contract ArcaneBearToken is Administration {
         decimals = 18;
         name = "ArcaneBearToken";
         symbol = "BEAR";
+        balances[msg.sender] = true;
         tokenMintingEnabled = false;
         contractLaunched = false;
         transfersFrozen = true;
