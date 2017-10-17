@@ -86,7 +86,7 @@ contract ArcaneBearToken is Administration {
     mapping (address => mapping (address => uint256)) public allowance;
 
     event Transfer(address indexed _sender, address indexed _recipient, uint256 _amount);
-    event Approve(address indexed _owner, address indexed _spender, uint256 _amount);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _amount);
     event FreezeTransfers(address indexed _invoker, bool indexed _transfersFrozen);
     event ThawTransfers(address indexed _invoker, bool indexed _transfersThawed);
     event MintToken(address indexed _invoker, address indexed _recipient, uint256 _tokensMinted, bool indexed _minted);
@@ -211,8 +211,46 @@ contract ArcaneBearToken is Administration {
         returns (bool transferred)
     {
         require(allowance[_owner][msg.sender] >= _amount);
+        require(allowance[_owner][msg.sender].sub(_amount) >= 0);
         require(transferCheck(_owner, _recipient, _amount));
-        
+        allowance[_owner][msg.sender] = allowance[_owner][msg.sender].sub(_amount);
+        balances[_owner] = balances[_owner].sub(_amount);
+        balances[_recipient] = balances[_recipient].add(_amount);
+        Transfer(_owner, _recipient, _amount);
         return true;
+    }
+
+    function approve(address _spender, uint256 _allowance)
+        public
+        returns (bool transferred)
+    {
+        require(balances[msg.sender] >= _allowance);
+        require(allowance[msg.sender][_spender].add(_allowance) > allowance[msg.sender][_spender]);
+        allowance[msg.sender][_spender] = _allowance;
+        Approval(msg.sender, _spender, _allowance);
+        return true;
+    }
+
+    //GETTERS//
+
+    function totalSupply()
+        constant
+        returns (uint256 _totalSupply)
+    {
+        return totalSupply;
+    }
+
+    function balanceOf(address _owner)
+        constant
+        returns (uint256 balance)
+    {
+        return balances[_owner];
+    }
+
+    function allowance(address _owner, address _spender)
+        constant
+        returns (uint256 _allowance)
+    {
+        return allowance[_owner][_spender];
     }
 }
