@@ -57,12 +57,14 @@ contract Administration {
     }
 
     function addModerator(address _newMod) onlyOwner returns (bool added) {
+        require(_newMod != address(0x0));
         moderators[_newMod] = true;
         AddMod(msg.sender, _newMod, true);
         return true;
     }
     
     function removeModerator(address _removeMod) onlyOwner returns (bool removed) {
+        require(_removeMod != address(0x0));
         moderators[_removeMod] = false;
         RemoveMod(msg.sender, _removeMod, true);
         return true;
