@@ -87,15 +87,19 @@ contract Crowdsale is Administration {
     uint256 public remainingTokens;
     uint256 public tokenCostInWei;
     uint256 public minContributionAmount; 
-    uint256 public tierOnePrice;
-    uint256 public tierOneMax;
-    uint256 public tierTwoPrice;
-    uint256 public tierTwoMax;
-    uint256 public currentPriceTier;
+    uint256 public periodOneEnd; // 1 day
+    uint256 public periodOneBonus; // 10%
+    uint256 public periodTwoEnd; // 2nd day to 7 day
+    uint256 public periodTwoBonus; // 5%
+    uint256 public periodThreeEnd; // 8day - 14 day 
+    uint256 public periodThreeBonus; // 2%
+    uint256 public periodFourEnd; // 15 day - 30 day
+    uint256 public currentPeriodBonus;
     uint256 public tokenSold;
     bool    public contractLaunched;
     bool    public crowdsaleLaunched;
     bool    public crowdsalePaused;
+    bool    public crowdsaleClosed; // this is only set to true at the beginning and end
     ArcaneBearToken public bearToken;
 
     mapping (address => uint256) public balances;
@@ -122,10 +126,12 @@ contract Crowdsale is Administration {
         contractLaunched = false;
         crowdsaleLaunched = false;
         crowdsalePaused = true;
+        crowdsaleClosed = true;
         crowdsaleReserve = _crowdsaleReserve;
     }
     
     function() payable {
+        require(!crowdsaleClosed);
         contribute(msg.sender);
     }
 
@@ -137,13 +143,20 @@ contract Crowdsale is Administration {
         preLaunch
         returns (bool launched)
     {
-
-        currentPriceTier = tierOnePrice;
+        periodOneEnd = now + 1 days;
+        periodTwoEnd = now + 7 days;
+        periodThreeEnd = now + 14 days;
+        periodFourEnd = now + 30 days;
+        periodOneBonus = 100000000000000000;
+        periodTwoBonus = 50000000000000000;
+        periodThreeBonus = 20000000000000000;
         crowdsalePaused = false;
+        crowdsaleClosed = false;
         crowdsaleLaunched = true;
         contractLaunched = true;
         tokenSold = 0;
         balances[owner] = crowdsaleReserve;
+        currentPeriodBonus = periodOneBonus;
         LaunchCrowdsale(msg.sender, true);
         return true;
     }
@@ -173,12 +186,19 @@ contract Crowdsale is Administration {
         return true;
     }
 
-    function priceTierCheck()
+    function currentPeriodCheck()
         private
         returns (bool valid)
     {
-        if (tokenSold >= tierOneMax) {
-            currentPriceTier = tierTwoPrice;
+        // disable bonus
+        if (now >= periodThreeEnd) {
+            currentPeriodBonus = 0;
+        } else if (now >= periodTwoEnd) {
+            currentPeriodBonus = periodThreeBonus;
+        } else if (now >= periodOneEnd) {
+            currentPeriodBonus = periodTwoBonus;
+        } else {
+            currentPeriodBonus = periodOneBonus;
         }
         return true;
     }
@@ -194,18 +214,28 @@ contract Crowdsale is Administration {
 
     function contribute(address _backer) payable {
         require(contractLaunched);
+        require(now <= periodFourEnd);
         require(!crowdsalePaused);
         require(_backer != address(0x0));
         require(msg.value >= minContributionAmount);
+        // Run a period check to determine how much of a bonus they get.
+        currentPeriodCheck();
         uint256 _amountBEAR = msg.value.div(tokenCostInWei);
         uint256 amountBEAR = _amountBEAR.mul(1 ether);
         uint256 amountCharged = 0;
         uint256 amountRefund = 0;
+        if (currentPeriodBonus > 0) {
+            uint256 _bonusAmount = amountBEAR.mul(currentPeriodBonus);
+            uint256 bonusAmount = _bonusAmount.div(1 ether);
+            amountBEAR = amountBEAR.add(bonusAmount);
+        }
         if (amountBEAR >= remainingTokens) {
             amountBEAR = remainingTokens;
             uint256 _amountCharged = amountBEAR.div(tokenCostInWei);
             amountCharged = _amountCharged.mul(1 ether);
             amountRefund = msg.value.sub(amountCharged);
+            // No more tokens available so lets end the crowdsale
+            crowdsaleClosed = true;
         } else {
             amountCharged = msg.value;
         }
