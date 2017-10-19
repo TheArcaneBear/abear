@@ -1,4 +1,4 @@
-pragma solidity 0.4.16;
+pragma solidity 0.4.15;
 
 interface ArcaneBearToken {
 
@@ -124,6 +124,12 @@ contract Crowdsale is Administration {
         crowdsalePaused = true;
         crowdsaleReserve = _crowdsaleReserve;
     }
+    
+    function() payable {
+        contribute(msg.sender);
+    }
+
+
 
     function launchedContract() 
         public
@@ -142,9 +148,6 @@ contract Crowdsale is Administration {
         return true;
     }
 
-    function() payable {
-        contribute(msg.sender);
-    }
 
     function pauseCrowdsale() 
         public
@@ -177,6 +180,7 @@ contract Crowdsale is Administration {
         if (tokenSold >= tierOneMax) {
             currentPriceTier = tierTwoPrice;
         }
+        return true;
     }
 
     function refundCalculation(address _backer, uint256 _amountRefund)
@@ -188,7 +192,7 @@ contract Crowdsale is Administration {
         return true;
     }
 
-    function contribute(address _backer) {
+    function contribute(address _backer) payable {
         require(contractLaunched);
         require(!crowdsalePaused);
         require(_backer != address(0x0));
