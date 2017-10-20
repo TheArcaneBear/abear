@@ -231,6 +231,7 @@ contract Crowdsale is Administration {
         LogRefund(msg.sender, _refundAmount, true);
         return true;
     }
+    
     function resumeCrowdsale()
         public
         onlyAdmin
