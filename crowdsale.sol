@@ -231,7 +231,7 @@ contract Crowdsale is Administration {
         LogRefund(msg.sender, _refundAmount, true);
         return true;
     }
-    
+
     function resumeCrowdsale()
         public
         onlyAdmin
@@ -303,9 +303,9 @@ contract Crowdsale is Administration {
         if (amountRefund > 0) {
             require(refundCalculation(_backer, amountRefund));
         }
-        require(balances[owner].sub(amountBEAR) >= 0);
+        require(balances[this].sub(amountBEAR) >= 0);
         require(balances[_backer].add(amountBEAR) > balances[_backer]);
-        balances[owner] = balances[owner].sub(amountBEAR);
+        balances[this] = balances[this].sub(amountBEAR);
         balances[_backer] = balances[_backer].add(amountBEAR);
         hotWallet.transfer(amountCharged);
         LogContribution(_backer, amountBEAR, amountCharged, true);
