@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.16;
 
 interface ArcaneBearToken {
 
@@ -134,7 +134,7 @@ contract Crowdsale is Administration {
     
     function() payable {
         require(!crowdsaleClosed);
-        contribute(msg.sender);
+        require(contribute(msg.sender));
     }
 
 
@@ -214,15 +214,18 @@ contract Crowdsale is Administration {
         return true;
     }
 
-    function contribute(address _backer) payable {
+    function contribute(address _backer)
+        payable
+        returns (bool _contributed)
+    {
         require(contractLaunched);
         require(now <= periodFourEnd);
         require(!crowdsalePaused);
         require(_backer != address(0x0));
         require(msg.value >= minContributionAmount);
         // Run a period check to determine how much of a bonus they get.
-        currentPeriodCheck();
-        uint256 _amountBEAR = msg.value.div(tokenCostInWei);
+        require(currentPeriodCheck());
+        uint256 _amountBEAR = msg.value / tokenCostInWei;
         uint256 amountBEAR = _amountBEAR.mul(1 ether);
         uint256 amountCharged = 0;
         uint256 amountRefund = 0;
@@ -250,5 +253,6 @@ contract Crowdsale is Administration {
         balances[_backer] = balances[_backer].add(amountBEAR);
         hotWallet.transfer(amountCharged);
         LogContribution(_backer, amountBEAR, amountCharged, true);
+        return true;
     }
 }
