@@ -96,6 +96,8 @@ contract Crowdsale is Administration {
     uint256 public periodFourEnd; // 15 day - 30 day
     uint256 public currentPeriodBonus;
     uint256 public tokenSold;
+    uint256 public softCap = 12000000000000000000000000;
+    uint256 public hardCap = 108000000000000000000000000;
     bool    public contractLaunched;
     bool    public crowdsaleLaunched;
     bool    public crowdsalePaused;
