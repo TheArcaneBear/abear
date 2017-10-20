@@ -102,6 +102,7 @@ contract Crowdsale is Administration {
     bool    public crowdsaleLaunched;
     bool    public crowdsalePaused;
     bool    public crowdsaleClosed; // this is only set to true at the beginning and end
+    bool    public withdrawalsEnabled;
     ArcaneBearToken public bearToken;
 
     mapping (address => uint256) public balances;
@@ -111,7 +112,9 @@ contract Crowdsale is Administration {
     event PauseCrowdsale(address indexed _invoker, bool indexed _paused);
     event ResumeCrowdsale(address indexed _invoker, bool indexed _resumed);
     event LogContribution(address _backer, uint256 _bearTokensBought, uint256 _amountEther, bool _contributed);
-
+    event LogRefund(address indexed _backer, uint256 indexed _amountEther, bool indexed _refunded);
+    event TokenTransfer(address indexed _sender, address indexed _recipient, uint256 _amount);
+    
     modifier preLaunch() {
         require(!contractLaunched);
         _;
@@ -119,6 +122,11 @@ contract Crowdsale is Administration {
 
     modifier afterLaunch() {
         require(contractLaunched);
+        _;
+    }
+
+    modifier withdrawalEnabled() {
+        require(withdrawalsEnabled);
         _;
     }
 
@@ -163,6 +171,15 @@ contract Crowdsale is Administration {
         return true;
     }
 
+    function enableWithdrawals()
+        public
+        onlyAdmin
+        afterLaunch
+        returns (bool _withdrawalsEnabled)
+    {
+        withdrawalsEnabled = true;
+        return true;
+    }
 
     function pauseCrowdsale() 
         public
@@ -176,6 +193,44 @@ contract Crowdsale is Administration {
         return true;
     }
 
+    function broadcastWithdrawal(address _backer)
+        public
+        onlyAdmin
+        withdrawalEnabled
+        returns (bool _withdrawn)
+    {
+        require(balances[_backer] > 0);
+        uint256 _rewardAmount = balances[_backer];
+        balances[_backer] = 0;
+        bearToken.transfer(_backer, _rewardAmount);
+        TokenTransfer(this, _backer, _rewardAmount);
+        return true;
+    }
+
+    function withdrawBEAR()
+        public
+        withdrawalEnabled
+        returns (bool _withdrawn)
+    {
+        require(balances[msg.sender] > 0);
+        uint256 _rewardAmount = balances[msg.sender];
+        balances[msg.sender] = 0;
+        bearToken.transfer(msg.sender, _rewardAmount);
+        TokenTransfer(this, msg.sender, _rewardAmount);
+        return true;
+    }
+
+    function withdrawEth()
+        public
+        returns (bool _ethWithdrawn)
+    {
+        require(ethBalances[msg.sender] > 0);
+        uint256 _refundAmount = ethBalances[msg.sender];
+        ethBalances[msg.sender] = 0;
+        msg.sender.transfer(_refundAmount);
+        LogRefund(msg.sender, _refundAmount, true);
+        return true;
+    }
     function resumeCrowdsale()
         public
         onlyAdmin
