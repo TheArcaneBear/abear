@@ -210,6 +210,7 @@ contract ArcaneBearToken is Administration {
         require(transferCheck(msg.sender, _recipient, _amount));
         balances[msg.sender] = balances[msg.sender].sub(_amount);
         balances[_recipient] = balances[_recipient].add(_amount);
+        Transfer(msg.sender, _recipient, _amount);
         return true;
     }
 
