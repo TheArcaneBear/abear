@@ -16,17 +16,12 @@ contract Crowdsale is Administration {
     uint256 public crowdsaleReserve;
     uint256 public remainingTokens;
     uint256 public tokenCostInWei;
-    uint256 public periodOneEnd; // 1 day
-    uint256 public periodOneBonus; // 10%
-    uint256 public periodTwoEnd; // 2nd day to 7 day
-    uint256 public periodTwoBonus; // 5%
-    uint256 public periodThreeEnd; // 8day - 14 day 
-    uint256 public periodThreeBonus; // 2%
-    uint256 public periodFourEnd; // 15 day - 30 day
+    uint256 public periodOneEnd; // 7 days
+    uint256 public periodOneBonus; // 20%
     uint256 public currentPeriodBonus;
     uint256 public tokenSold;
-    uint256 public softCap = 12000000000000000000000000;
     uint256 public hardCap = 108000000000000000000000000;
+    uint256 public minContributionAmount = 1000000000000000000; // 1 eth in wei
     bool    public contractLaunched;
     bool    public crowdsaleLaunched;
     bool    public crowdsalePaused;
@@ -82,13 +77,8 @@ contract Crowdsale is Administration {
         preLaunch
         returns (bool launched)
     {
-        periodOneEnd = now + 1 days;
-        periodTwoEnd = now + 7 days;
-        periodThreeEnd = now + 14 days;
-        periodFourEnd = now + 30 days;
-        periodOneBonus = 100000000000000000;
-        periodTwoBonus = 50000000000000000;
-        periodThreeBonus = 20000000000000000;
+        periodOneEnd = now + 7 days;
+        periodOneBonus = 200000000000000000;
         crowdsalePaused = false;
         crowdsaleClosed = false;
         crowdsaleLaunched = true;
@@ -173,23 +163,6 @@ contract Crowdsale is Administration {
         return true;
     }
 
-    function currentPeriodCheck()
-        private
-        returns (bool valid)
-    {
-        // disable bonus
-        if (now >= periodThreeEnd) {
-            currentPeriodBonus = 0;
-        } else if (now >= periodTwoEnd) {
-            currentPeriodBonus = periodThreeBonus;
-        } else if (now >= periodOneEnd) {
-            currentPeriodBonus = periodTwoBonus;
-        } else {
-            currentPeriodBonus = periodOneBonus;
-        }
-        return true;
-    }
-
     function refundCalculation(address _backer, uint256 _amountRefund)
         private
         returns (bool valid)
@@ -204,11 +177,10 @@ contract Crowdsale is Administration {
         returns (bool _contributed)
     {
         require(contractLaunched);
-        require(now <= periodFourEnd);
-        require(!crowdsalePaused);
+        require(now <= periodOneEnd);
         require(_backer != address(0x0));
+        require(msg.value >= minContributionAmount);
         // Run a period check to determine how much of a bonus they get.
-        require(currentPeriodCheck());
         uint256 _amountBEAR = msg.value / tokenCostInWei;
         uint256 amountBEAR = _amountBEAR.mul(1 ether);
         uint256 amountCharged = 0;
