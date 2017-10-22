@@ -185,11 +185,9 @@ contract Crowdsale is Administration {
         uint256 amountBEAR = _amountBEAR.mul(1 ether);
         uint256 amountCharged = 0;
         uint256 amountRefund = 0;
-        if (currentPeriodBonus > 0) {
-            uint256 _bonusAmount = amountBEAR.mul(currentPeriodBonus);
-            uint256 bonusAmount = _bonusAmount.div(1 ether);
-            amountBEAR = amountBEAR.add(bonusAmount);
-        }
+        uint256 _bonusAmount = amountBEAR.mul(currentPeriodBonus);
+        uint256 bonusAmount = _bonusAmount.div(1 ether);
+        amountBEAR = amountBEAR.add(bonusAmount);
         if (amountBEAR >= remainingTokens) {
             amountBEAR = remainingTokens;
             uint256 _amountCharged = amountBEAR.div(tokenCostInWei);
