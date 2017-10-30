@@ -239,4 +239,12 @@ contract Crowdsale is Administration {
         LogContribution(_backer, amountBEAR, amountCharged, true);
         return true;
     }
+
+    function getStatus() 
+        public
+        view
+        returns (bool _status)
+    {
+        return crowdsalePaused;
+    }
 }
